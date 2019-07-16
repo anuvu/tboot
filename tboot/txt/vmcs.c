@@ -441,17 +441,19 @@ static bool vmx_create_vmcs(unsigned int cpuid)
 static void launch_mini_guest(unsigned int cpuid)
 {
     unsigned long error;
+    void *wfs_ptr;
 
     printk(TBOOT_DETA"launching mini-guest for cpu %u\n", cpuid);
 
     /* this is close enough to entering wait-for-sipi, so inc counter */
-    atomic_inc((atomic_t *)&_tboot_shared.num_in_wfs);
+    wfs_ptr = &_tboot_shared.num_in_wfs;
+    atomic_inc(wfs_ptr);
 
     __vmlaunch();
 
     /* should not reach here */
     atomic_dec(&ap_wfs_count);
-    atomic_dec((atomic_t *)&_tboot_shared.num_in_wfs);
+    atomic_dec(wfs_ptr);
     error = __vmread(VM_INSTRUCTION_ERROR);
     printk(TBOOT_ERR"vmlaunch failed for cpu %u, error code %lx\n", cpuid, error);
     apply_policy(TB_ERR_FATAL);
@@ -488,6 +490,7 @@ static void print_failed_vmentry_reason(unsigned int exit_reason)
 void vmx_vmexit_handler(void)
 {
     unsigned int apicid = get_apicid();
+    void *wfs_ptr;
 
     unsigned int exit_reason = __vmread(VM_EXIT_REASON);
     /*printk("vmx_vmexit_handler, cpu= %d,  exit_reason=%x.\n", apicid, exit_reason);*/
@@ -496,7 +499,8 @@ void vmx_vmexit_handler(void)
         print_failed_vmentry_reason(exit_reason);
         stop_vmx(apicid);
         atomic_dec(&ap_wfs_count);
-        atomic_dec((atomic_t *)&_tboot_shared.num_in_wfs);
+        wfs_ptr = &_tboot_shared.num_in_wfs;
+        atomic_dec(wfs_ptr);
         apply_policy(TB_ERR_FATAL);
     }
     else if ( exit_reason == EXIT_REASON_INIT ) {
@@ -514,7 +518,8 @@ void vmx_vmexit_handler(void)
         /*printk("exiting due to SIPI: vector=%x\n", sipi_vec); */
         stop_vmx(apicid);
         atomic_dec(&ap_wfs_count);
-        atomic_dec((atomic_t *)&_tboot_shared.num_in_wfs);
+        wfs_ptr = &_tboot_shared.num_in_wfs;
+        atomic_dec(wfs_ptr);
         cpu_wakeup(apicid, sipi_vec);
 
         /* cpu_wakeup() doesn't return, so we should never get here */
@@ -524,7 +529,9 @@ void vmx_vmexit_handler(void)
     else if ( exit_reason == EXIT_REASON_VMCALL ) {
         stop_vmx(apicid);
         atomic_dec(&ap_wfs_count);
-        atomic_dec((atomic_t *)&_tboot_shared.num_in_wfs);
+        wfs_ptr = &_tboot_shared.num_in_wfs;
+        atomic_dec(wfs_ptr);
+
         /* spin */
         while ( true )
             __asm__ __volatile__("cli; hlt;");

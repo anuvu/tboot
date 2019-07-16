@@ -553,7 +553,8 @@ void shutdown(void)
 {
     struct tpm_if *tpm = get_tpm();
     const struct tpm_if_fp *tpm_fp = get_tpm_fp();
-   
+    void *tb_wfs_ptr;
+
     /* wait-for-sipi only invoked for APs, so skip all BSP shutdown code */
     if ( _tboot_shared.shutdown_type == TB_SHUTDOWN_WFS ) {
         atomic_inc(&ap_wfs_count);
@@ -568,8 +569,8 @@ void shutdown(void)
     }
 
     printk(TBOOT_INFO"wait until all APs ready for txt shutdown\n");
-    while( atomic_read(&_tboot_shared.num_in_wfs)
-           < atomic_read(&ap_wfs_count) )
+    tb_wfs_ptr = &_tboot_shared.num_in_wfs;
+    while( atomic_read(tb_wfs_ptr) < atomic_read(&ap_wfs_count) )
         cpu_relax();
 
     /* ensure localities 0, 1 are inactive (in case kernel used them) */

@@ -393,10 +393,13 @@ tb_error_t txt_verify_platform(void)
 
 static bool verify_saved_mtrrs(txt_heap_t *txt_heap)
 {
+    void *mtrr_ptr;
+
     os_mle_data_t *os_mle_data;
     os_mle_data = get_os_mle_data_start(txt_heap);
 
-    return validate_mtrrs(&(os_mle_data->saved_mtrr_state));
+    mtrr_ptr = &os_mle_data->saved_mtrr_state;
+    return validate_mtrrs(mtrr_ptr);
 }
 
 tb_error_t txt_post_launch_verify_platform(void)

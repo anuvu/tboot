@@ -64,6 +64,9 @@ typedef struct {
 
 #define MAX_VALUE_LEN 64
 
+#define GCP_PSBUF_FPTR(_x) \
+    ((void *)(&g_com_port.comc_psbdf)->_x)
+
 /*
  * the option names and default values must be separate from the actual
  * params entered
@@ -308,9 +311,9 @@ bool g_psbdf_enabled = false;
 static bool parse_com_psbdf(const char **bdf)
 {
     g_psbdf_enabled = parse_pci_bdf(bdf,
-                  &g_com_port.comc_psbdf.bus,
-                  &g_com_port.comc_psbdf.slot,
-                  &g_com_port.comc_psbdf.func);
+                  GCP_PSBUF_FPTR(bus),
+                  GCP_PSBUF_FPTR(slot),
+                  GCP_PSBUF_FPTR(func));
 
     return g_psbdf_enabled;
 }
@@ -319,9 +322,9 @@ bool g_pbbdf_enabled = false;
 static bool parse_com_pbbdf(const char **bdf)
 {
     g_pbbdf_enabled = parse_pci_bdf(bdf,
-                  &g_com_port.comc_pbbdf.bus,
-                  &g_com_port.comc_pbbdf.slot,
-                  &g_com_port.comc_pbbdf.func);
+                  GCP_PSBUF_FPTR(bus),
+                  GCP_PSBUF_FPTR(slot),
+                  GCP_PSBUF_FPTR(func));
 
     return g_pbbdf_enabled;
 }

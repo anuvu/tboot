@@ -786,6 +786,7 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
     void *mle_ptab_base;
     os_mle_data_t *os_mle_data;
     txt_heap_t *txt_heap;
+    void *mtrr_ptr;
 
     /*
      * find correct SINIT AC module in modules list
@@ -818,7 +819,8 @@ tb_error_t txt_launch_environment(loader_ctx *lctx)
 
     /* save MTRRs before we alter them for SINIT launch */
     os_mle_data = get_os_mle_data_start(txt_heap);
-    save_mtrrs(&(os_mle_data->saved_mtrr_state));
+    mtrr_ptr = &os_mle_data->saved_mtrr_state;
+    save_mtrrs(mtrr_ptr);
 
     /* set MTRRs properly for AC module (SINIT) */
     if ( !set_mtrrs_for_acmod(g_sinit) )
@@ -1033,6 +1035,7 @@ void txt_post_launch(void)
     txt_heap_t *txt_heap;
     os_mle_data_t *os_mle_data;
     tb_error_t err;
+    void *mtrr_ptr;
 
     /* verify MTRRs, VT-d settings, TXT heap, etc. */
     err = txt_post_launch_verify_platform();
@@ -1066,7 +1069,8 @@ void txt_post_launch(void)
     }
 
     /* restore pre-SENTER MTRRs that were overwritten for SINIT launch */
-    restore_mtrrs(&(os_mle_data->saved_mtrr_state));
+    mtrr_ptr = &os_mle_data->saved_mtrr_state;
+    restore_mtrrs(mtrr_ptr);
 
     /* now, if there was an error, apply policy */
     apply_policy(err);
@@ -1084,6 +1088,8 @@ void txt_post_launch(void)
 
 void ap_wait(unsigned int cpuid)
 {
+    void *wfs_ptr;
+
     if ( cpuid >= NR_CPUS ) {
         printk(TBOOT_ERR"cpuid (%u) exceeds # supported CPUs\n", cpuid);
         apply_policy(TB_ERR_FATAL);
@@ -1098,7 +1104,8 @@ void ap_wait(unsigned int cpuid)
     wrmsr(MSR_IA32_MISC_ENABLE, misc);
 
     /* this is close enough to entering monitor/mwait loop, so inc counter */
-    atomic_inc((atomic_t *)&_tboot_shared.num_in_wfs);
+    wfs_ptr = &_tboot_shared.num_in_wfs;
+    atomic_inc(wfs_ptr);
     mtx_leave(&ap_lock);
 
     printk(TBOOT_INFO"cpu %u mwait'ing\n", cpuid);
@@ -1112,7 +1119,7 @@ void ap_wait(unsigned int cpuid)
 
     uint32_t sipi_vec = (uint32_t)_tboot_shared.ap_wake_addr;
     atomic_dec(&ap_wfs_count);
-    atomic_dec((atomic_t *)&_tboot_shared.num_in_wfs);
+    atomic_dec(wfs_ptr);
     cpu_wakeup(cpuid, sipi_vec);
 }
 
@@ -1122,6 +1129,7 @@ void txt_cpu_wakeup(void)
     os_mle_data_t *os_mle_data;
     uint64_t madt_apicbase, msr_apicbase;
     unsigned int cpuid = get_apicid();
+    void *mtrr_ptr;
 
     if ( cpuid >= NR_CPUS ) {
         printk(TBOOT_ERR"cpuid (%u) exceeds # supported CPUs\n", cpuid);
@@ -1150,7 +1158,8 @@ void txt_cpu_wakeup(void)
     os_mle_data = get_os_mle_data_start(txt_heap);
 
     /* apply (validated) (pre-SENTER) MTRRs from BSP to each AP */
-    restore_mtrrs(&(os_mle_data->saved_mtrr_state));
+    mtrr_ptr = &os_mle_data->saved_mtrr_state;
+    restore_mtrrs(mtrr_ptr);
 
     /* restore pre-SENTER IA32_MISC_ENABLE_MSR */
     wrmsr(MSR_IA32_MISC_ENABLE, os_mle_data->saved_misc_enable_msr);
