@@ -16,9 +16,10 @@
 const char *fp_ident(void)
 {
    static char buf[1024];
+   const char warn[] = "WARNING: sizeof(fp_digit) == sizeof(fp_word), this build is likely to not work properly.\n";
 
-   memset(buf, 0, sizeof(buf));
-   snprintf(buf, sizeof(buf)-1,
+   XMEMSET(buf, 0, sizeof(buf));
+   XSNPRINTF(buf, sizeof(buf)-1,
 "TomsFastMath " GIT_VERSION "\n"
 #if defined(TFM_IDENT_BUILD_DATE)
 "Built on " __DATE__ " at " __TIME__ "\n"
@@ -77,12 +78,10 @@ const char *fp_ident(void)
 #ifdef TFM_HUGE
 " TFM_HUGE "
 #endif
-"\n", (unsigned long)sizeof(fp_digit), (unsigned long)sizeof(fp_word), FP_MAX_SIZE);
+"\n%s",
+(unsigned long)sizeof(fp_digit), (unsigned long)sizeof(fp_word), FP_MAX_SIZE,
+(sizeof(fp_digit) == sizeof(fp_word) ? warn : ""));
 
-   if (sizeof(fp_digit) == sizeof(fp_word)) {
-      strncat(buf, "WARNING: sizeof(fp_digit) == sizeof(fp_word), this build is likely to not work properly.\n",
-              sizeof(buf) - strlen(buf) - 1);
-   }
    return buf;
 }
 

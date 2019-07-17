@@ -1,3 +1,5 @@
+#include <tfm.h>
+
 #ifndef TFM_PRE_GEN_MPI_C
 #define TFM_DEFINES
 #include "fp_sqr_comba.c"
@@ -655,7 +657,7 @@ void fp_sqr_comba64(fp_int *A, fp_int *B)
 
    B->used = 128;
    B->sign = FP_ZPOS;
-   memcpy(B->dp, b, 128 * sizeof(fp_digit));
+   XMEMCPY(B->dp, b, 128 * sizeof(fp_digit));
    fp_clamp(B);
 }
 #endif

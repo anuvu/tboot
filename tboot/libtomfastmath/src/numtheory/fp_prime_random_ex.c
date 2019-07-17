@@ -29,7 +29,7 @@ int fp_prime_random_ex(fp_int *a, int t, int size, int flags, tfm_prime_callback
    bsize = (size>>3)+(size&7?1:0);
 
    /* we need a buffer of bsize bytes */
-   tmp = malloc(bsize);
+   tmp = XMALLOC(bsize);
    if (tmp == NULL) {
       return FP_MEM;
    }
@@ -92,7 +92,7 @@ int fp_prime_random_ex(fp_int *a, int t, int size, int flags, tfm_prime_callback
 
    err = FP_OKAY;
 error:
-   free(tmp);
+   XFREE(tmp);
    return err;
 }
 

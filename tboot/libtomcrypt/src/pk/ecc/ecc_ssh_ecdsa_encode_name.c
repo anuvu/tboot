@@ -38,18 +38,18 @@ int ecc_ssh_ecdsa_encode_name(char *buffer, unsigned long *buflen, const ecc_key
    /* Check for three named curves: nistp256, nistp384, nistp521 */
    if (XSTRCMP("1.2.840.10045.3.1.7", oidstr) == 0) {
       /* nistp256 - secp256r1 - OID 1.2.840.10045.3.1.7 */
-      size = snprintf(buffer, *buflen, "ecdsa-sha2-nistp256");
+      size = XSNPRINTF(buffer, *buflen, "ecdsa-sha2-nistp256");
    }
    else if (XSTRCMP("1.3.132.0.34", oidstr) == 0) {
       /* nistp384 - secp384r1 - OID 1.3.132.0.34 */
-      size = snprintf(buffer, *buflen, "ecdsa-sha2-nistp384");
+      size = XSNPRINTF(buffer, *buflen, "ecdsa-sha2-nistp384");
    }
    else if (XSTRCMP("1.3.132.0.35", oidstr) == 0) {
       /* nistp521 - secp521r1 - OID 1.3.132.0.35 */
-      size = snprintf(buffer, *buflen, "ecdsa-sha2-nistp521");
+      size = XSNPRINTF(buffer, *buflen, "ecdsa-sha2-nistp521");
    } else {
       /* Otherwise we use the OID... */
-      size = snprintf(buffer, *buflen, "ecdsa-sha2-%s", oidstr);
+      size = XSNPRINTF(buffer, *buflen, "ecdsa-sha2-%s", oidstr);
    }
 
    /* snprintf returns size that would have been written, but limits to buflen-1 chars plus terminator */

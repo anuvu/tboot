@@ -99,6 +99,9 @@ static void decrypt(ulong32 *p, int N, const ulong32 *uk)
          case 2: pi2(p, uk+t); --n; /* FALLTHROUGH */
          case 1: pi1(p); --n; break;
          case 0: return;
+         default:
+            /* NOTE: this exists to make the compiler happy */
+         break;
       }
       t ^= 4;
    }

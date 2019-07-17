@@ -8,6 +8,8 @@
  */
 #include "tomcrypt_private.h"
 
+#include <limits.h>
+
 /**
   @file rsa_get_size.c
   Retrieve the size of an RSA key, Steffen Jaeckel.

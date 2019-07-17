@@ -102,7 +102,7 @@ static int _fp_exptmod(fp_int * G, fp_int * X, fp_int * P, fp_int * Y)
   } 
 
   /* init M array */
-  memset(M, 0, sizeof(M)); 
+  XMEMSET(M, 0, sizeof(M)); 
 
   /* now setup montgomery  */
   if ((err = fp_montgomery_setup (P, &mp)) != FP_OKAY) {

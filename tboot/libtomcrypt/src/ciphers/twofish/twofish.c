@@ -249,6 +249,9 @@ static void h_func(const unsigned char *in, unsigned char *out, const unsigned c
       y[x] = in[x];
   }
   switch (k) {
+     default:
+            /* NOTE: this exists to make the compiler happy */
+            break;
      case 4:
             y[0] = (unsigned char)(sbox(1, (ulong32)y[0]) ^ M[4 * (6 + offset) + 0]);
             y[1] = (unsigned char)(sbox(0, (ulong32)y[1]) ^ M[4 * (6 + offset) + 1]);

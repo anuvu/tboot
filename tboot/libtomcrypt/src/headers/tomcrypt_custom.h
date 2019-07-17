@@ -12,29 +12,29 @@
 
 /* macros for various libc functions you can change for embedded targets */
 #ifndef XMALLOC
-#define XMALLOC  malloc
+#define XMALLOC  tb_malloc
 #endif
 #ifndef XREALLOC
-#define XREALLOC realloc
+#define XREALLOC tb_realloc
 #endif
 #ifndef XCALLOC
-#define XCALLOC  calloc
+#define XCALLOC  tb_calloc
 #endif
 #ifndef XFREE
-#define XFREE    free
+#define XFREE    tb_free
 #endif
 
 #ifndef XMEMSET
-#define XMEMSET  memset
+#define XMEMSET  tb_memset
 #endif
 #ifndef XMEMCPY
-#define XMEMCPY  memcpy
+#define XMEMCPY  tb_memcpy
 #endif
 #ifndef XMEMMOVE
-#define XMEMMOVE memmove
+#define XMEMMOVE tb_memmove
 #endif
 #ifndef XMEMCMP
-#define XMEMCMP  memcmp
+#define XMEMCMP  tb_memcmp
 #endif
 /* A memory compare function that has to run in constant time,
  * c.f. mem_neq() API summary.
@@ -43,18 +43,29 @@
 #define XMEM_NEQ  mem_neq
 #endif
 #ifndef XSTRCMP
-#define XSTRCMP  strcmp
+#define XSTRCMP  tb_strcmp
 #endif
 #ifndef XSTRNCPY
-#define XSTRNCPY strncpy
+#define XSTRNCPY tb_strncpy
+#endif
+#ifndef XSTRLEN
+#define XSTRLEN  tb_strlen
 #endif
 
 #ifndef XCLOCK
-#define XCLOCK   clock
+#define XCLOCK   tb_clock
 #endif
 
 #ifndef XQSORT
 #define XQSORT qsort
+#endif
+
+#ifndef XABORT
+#define XABORT tb_abort
+#endif
+
+#ifndef XSNPRINTF
+#define XSNPRINTF tb_snprintf
 #endif
 
 #if ( defined(malloc) || defined(realloc) || defined(calloc) || defined(free) || \
@@ -147,7 +158,7 @@
 /* #define LTC_CLEAN_STACK */
 
 /* disable all file related functions */
-/* #define LTC_NO_FILE */
+#define LTC_NO_FILE
 
 /* disable all forms of ASM */
 /* #define LTC_NO_ASM */
@@ -165,7 +176,7 @@
 /* #define LTM_DESC */
 
 /* TomsFastMath */
-/* #define TFM_DESC */
+#define TFM_DESC
 
 /* GNU Multiple Precision Arithmetic Library */
 /* #define GMP_DESC */

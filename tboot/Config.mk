@@ -25,6 +25,8 @@ CFLAGS		+= -fomit-frame-pointer
 CFLAGS		+= -pipe
 CFLAGS		+= -iwithprefix include
 CFLAGS		+= -I$(CURDIR)/include -I$(ROOTDIR)/include
+CFLAGS		+= -I$(CURDIR)/libtomfastmath/src/headers
+CFLAGS		+= -I$(CURDIR)/libtomcrypt/src/headers
 # ensure no floating-point variables
 CFLAGS		+= -msoft-float
 # Disable PIE/SSP if GCC supports them. They can break us.

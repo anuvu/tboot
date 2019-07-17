@@ -8,6 +8,8 @@
  */
 #include "tomcrypt_private.h"
 
+#include <limits.h>
+
 /**
   @file rsa_sign_saltlen_get.c
   Retrieve the maximum size of the salt, Steffen Jaeckel.

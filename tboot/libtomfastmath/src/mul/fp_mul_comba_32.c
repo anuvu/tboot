@@ -1,3 +1,5 @@
+#include <tfm.h>
+
 #ifndef TFM_PRE_GEN_MPI_C
 #define TFM_DEFINES
 #include "fp_mul_comba.c"
@@ -10,8 +12,8 @@ void fp_mul_comba32(fp_int *A, fp_int *B, fp_int *C)
    int out_size;
 
    out_size = A->used + B->used;
-   memcpy(at, A->dp, 32 * sizeof(fp_digit));
-   memcpy(at+32, B->dp, 32 * sizeof(fp_digit));
+   XMEMCPY(at, A->dp, 32 * sizeof(fp_digit));
+   XMEMCPY(at+32, B->dp, 32 * sizeof(fp_digit));
    COMBA_START;
 
    COMBA_CLEAR;

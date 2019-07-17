@@ -570,6 +570,7 @@ INLINE static void tiger_round(ulong64 *a, ulong64 *b, ulong64 *c, ulong64 x, in
         case 5:  *b = (tmp << 2) + tmp; break;
         case 7:  *b = (tmp << 3) - tmp; break;
         case 9:  *b = (tmp << 3) + tmp; break;
+	default: /* NOTE: keep the compiler happy */ break;
     }
 }
 
@@ -771,7 +772,7 @@ int  tiger_test(void)
 
   for (i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
       tiger_init(&md);
-      tiger_process(&md, (unsigned char *)tests[i].msg, (unsigned long)strlen(tests[i].msg));
+      tiger_process(&md, (unsigned char *)tests[i].msg, (unsigned long)XSTRLEN(tests[i].msg));
       tiger_done(&md, tmp);
       if (compare_testvector(tmp, sizeof(tmp), tests[i].hash, sizeof(tests[i].hash), "TIGER", i)) {
           return CRYPT_FAIL_TESTVECTOR;

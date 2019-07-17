@@ -76,7 +76,7 @@ endef
 # by giving them as a parameter to make:
 #  make CFLAGS="-I./src/headers/ -DLTC_SOURCE ..." ...
 #
-LTC_CFLAGS += -I./src/headers/ -Wall -Wsign-compare -Wshadow -DLTC_SOURCE
+LTC_CFLAGS += -I$(shell pwd)/../../include -I$(shell pwd)/../include -I./src/headers/ -Wall -Wsign-compare -Wshadow -DLTC_SOURCE
 
 ifdef OLD_GCC
 LTC_CFLAGS += -W

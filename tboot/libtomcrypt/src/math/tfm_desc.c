@@ -123,6 +123,7 @@ static int compare(void *a, void *b)
       case FP_LT: return LTC_MP_LT;
       case FP_EQ: return LTC_MP_EQ;
       case FP_GT: return LTC_MP_GT;
+      default: /* NOTE: keep the compiler happy */ break;
    }
    return 0;
 }
@@ -136,6 +137,7 @@ static int compare_d(void *a, ltc_mp_digit b)
       case FP_LT: return LTC_MP_LT;
       case FP_EQ: return LTC_MP_EQ;
       case FP_GT: return LTC_MP_GT;
+      default: /* NOTE: keep the compiler happy */ break;
    }
    return 0;
 }

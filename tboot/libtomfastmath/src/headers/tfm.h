@@ -10,7 +10,7 @@
 #ifndef TFM_H_
 #define TFM_H_
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -31,6 +31,32 @@
 
 #ifndef MAX
    #define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
+
+/* macros for various libc functions you can change for embedded targets */
+#ifndef XMEMSET
+#define XMEMSET   tb_memset
+#endif
+#ifndef XMEMCPY
+#define XMEMCPY   tb_memcpy
+#endif
+#ifndef XSNPRINTF
+#define XSNPRINTF tb_snprintf
+#endif
+#ifndef XSTRLEN
+#define XSTRLEN   tb_strlen
+#endif
+#ifndef XRAND
+#define XRAND     tb_rand
+#endif
+#ifndef XRAND_MAX
+#define XRAND_MAX TB_RAND_MAX
+#endif
+#ifndef XMALLOC
+#define XMALLOC   tb_malloc
+#endif
+#ifndef XFREE
+#define XFREE     tb_free
 #endif
 
 /* externally define this symbol to ignore the default settings, useful for changing the build from the make process */
@@ -260,8 +286,8 @@
 
 /* use rand() as fall-back if there's no better rand function */
 #ifndef FP_GEN_RANDOM
-   #define FP_GEN_RANDOM()    rand()
-   #define FP_GEN_RANDOM_MAX  RAND_MAX
+   #define FP_GEN_RANDOM()    XRAND()
+   #define FP_GEN_RANDOM_MAX  XRAND_MAX
 #endif
 
 /* some default configurations.
@@ -330,7 +356,7 @@ typedef struct {
 const char *fp_ident(void);
 
 /* initialize [or zero] an fp int */
-#define fp_init(a)  (void)memset((a), 0, sizeof(fp_int))
+#define fp_init(a)  (void)XMEMSET((a), 0, sizeof(fp_int))
 #define fp_zero(a)  fp_init(a)
 
 /* zero/even/odd ? */
@@ -345,7 +371,7 @@ void fp_set(fp_int *a, fp_digit b);
 void fp_rand(fp_int *a, int digits);
 
 /* copy from a to b */
-#define fp_copy(a, b)      (void)(((a) != (b)) && memcpy((b), (a), sizeof(fp_int)))
+#define fp_copy(a, b)      (void)(((a) != (b)) && XMEMCPY((b), (a), sizeof(fp_int)))
 #define fp_init_copy(a, b) fp_copy(b, a)
 
 /* clamp digits */

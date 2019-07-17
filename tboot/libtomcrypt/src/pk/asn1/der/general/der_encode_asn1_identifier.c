@@ -8,6 +8,8 @@
  */
 #include "tomcrypt_private.h"
 
+#include <limits.h>
+
 /**
   @file der_encode_asn1_identifier.c
   ASN.1 DER, encode the ASN.1 Identifier, Steffen Jaeckel

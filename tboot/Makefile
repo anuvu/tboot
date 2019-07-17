@@ -29,6 +29,11 @@ obj-y += common/tpm_12.o common/tpm_20.o
 obj-y += common/sha256.o
 
 OBJS := $(obj-y)
+OBJS += libtomcrypt/libtomcrypt.a
+OBJS += libtomfastmath/libtfm.a
+# libtomfastmath requires libgcc for some of the math, see link below
+# -> https://stackoverflow.com/questions/34532528/undefined-reference-to-divdi3
+OBJS += $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 
 TARGET_LDS := $(CURDIR)/common/tboot.lds
@@ -67,12 +72,22 @@ $(DISTDIR)/boot/$(TARGET).gz : $(TARGET).gz
 
 
 clean :
+	$(MAKE) -C libtomfastmath clean
+	$(MAKE) -C libtomcrypt clean
 	rm -f $(TARGET)* $(TARGET_LDS) *~ include/*~ include/txt/*~ *.o common/*~ txt/*~ common/*.o txt/*.o
 	rm -f tags TAGS cscope.files cscope.in.out cscope.out cscope.po.out
 
-
 distclean : clean
 
+#
+# libtomfastmath/libtomcrypt
+#
+
+libtomfastmath/libtfm.a:
+	CFLAGS='$(CFLAGS)' $(MAKE) -C libtomfastmath
+
+libtomcrypt/libtomcrypt.a:
+	CFLAGS='$(CFLAGS)' $(MAKE) -C libtomcrypt
 
 #
 #    TAGS / tags

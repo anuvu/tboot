@@ -17,8 +17,6 @@
 
 #ifdef LTC_KASUMI
 
-typedef unsigned u16;
-
 #define ROL16(x, y) ((((x)<<(y)) | ((x)>>(16-(y)))) & 0xFFFF)
 
 const struct ltc_cipher_descriptor kasumi_desc = {

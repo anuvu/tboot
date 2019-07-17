@@ -35,6 +35,7 @@ int pkcs12_utf8_to_utf16(const unsigned char *in,  unsigned long  inlen,
       if (*in >= 252) extra++;  /* 5 */
       if (in + extra >= in_end) goto ERROR;
       switch (extra) {
+         default: /* NOTE: keep the compiler happy */ break;
          case 5: ch += *in++; ch <<= 6;
          /* FALLTHROUGH */
          case 4: ch += *in++; ch <<= 6;

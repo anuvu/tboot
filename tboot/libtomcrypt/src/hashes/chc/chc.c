@@ -285,7 +285,7 @@ int chc_test(void)
 
    for (i = 0; i < (int)(sizeof(tests)/sizeof(tests[0])); i++) {
        chc_init(&md);
-       chc_process(&md, tests[i].msg, strlen((char *)tests[i].msg));
+       chc_process(&md, tests[i].msg, XSTRLEN((char *)tests[i].msg));
        chc_done(&md, tmp);
        if (compare_testvector(tmp, tests[i].len, tests[i].hash, tests[i].len, "CHC", i)) {
           return CRYPT_FAIL_TESTVECTOR;

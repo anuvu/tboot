@@ -9,6 +9,8 @@
 
 #include "tomcrypt_private.h"
 
+#include <limits.h>
+
 /**
   @file ecc_sizes.c
   ECC Crypto, Tom St Denis
