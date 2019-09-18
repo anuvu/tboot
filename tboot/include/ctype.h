@@ -55,36 +55,44 @@ extern const uint8_t _ctype[];
 #define _UP     0x01    /* 'A'-'Z' */
 #define _XD     0x80    /* ''-'9', 'A'-'F', 'a'-'f' */
 
-static always_inline bool isdigit(int c)
+static always_inline int isdigit(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_DI));
 }
-static always_inline bool isspace(int c)
+
+static always_inline int isspace(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_SP));
 }
-static always_inline bool isxdigit(int c)
+
+static always_inline int isxdigit(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_XD));
 }
-static always_inline bool isupper(int c)
+
+static always_inline int isupper(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_UP));
 }
-static always_inline bool islower(int c)
+
+static always_inline int islower(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_LO));
 }
-static always_inline bool isprint(int c)
+
+static always_inline int isprint(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_LO | _UP | _DI |
                                           _SP | _PU));
 }
-static always_inline bool isalpha(int c)
+
+static always_inline int isalpha(int c)
 {
     return (_ctype[(unsigned char)(c)] & (_LO | _UP));
 }
 
+int toupper(int c);
+int tolower(int c);
 
 #endif /* __CTYPE_H__ */
 

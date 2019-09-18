@@ -39,6 +39,8 @@
 #ifndef __COM_H__
 #define __COM_H__
 
+#include <types.h>
+
 /* 8250 registers #[0-6]. */
 
 #define	com_data	0	/* data register (R/W) */

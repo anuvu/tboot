@@ -58,17 +58,17 @@ struct sha1_ctxt {
     uint8_t count;
 };
 
-extern void sha1_init(struct sha1_ctxt *);
-extern void sha1_pad(struct sha1_ctxt *);
-extern void sha1_loop(struct sha1_ctxt *, const uint8_t *, size_t);
-extern void sha1_result(struct sha1_ctxt *, unsigned char *);
+extern void tb_sha1_init(struct sha1_ctxt *);
+extern void tb_sha1_pad(struct sha1_ctxt *);
+extern void tb_sha1_loop(struct sha1_ctxt *, const uint8_t *, size_t);
+extern void tb_sha1_result(struct sha1_ctxt *, unsigned char *);
 #define SHA1_RESULTLEN (160/8)
 
 /* compatibilty with other SHA1 source codes */
 typedef struct sha1_ctxt SHA_CTX;
-#define SHA1_Init(x)		sha1_init((x))
-#define SHA1_Update(x, y, z)	sha1_loop((x), (y), (z))
-#define SHA1_Final(x, y)	sha1_result((y), (x))
+#define SHA1_Init(x)		tb_sha1_init((x))
+#define SHA1_Update(x, y, z)	tb_sha1_loop((x), (y), (z))
+#define SHA1_Final(x, y)	tb_sha1_result((y), (x))
 #define SHA_DIGEST_LENGTH	SHA1_RESULTLEN
 
 int sha1_buffer(const unsigned char *buffer, size_t len,

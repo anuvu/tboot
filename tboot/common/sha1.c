@@ -160,7 +160,7 @@ static void sha1_step(struct sha1_ctxt *ctxt)
 
 /*------------------------------------------------------------*/
 
-void sha1_init(struct sha1_ctxt *ctxt)
+void tb_sha1_init(struct sha1_ctxt *ctxt)
 {
     tb_memset(ctxt,0, sizeof(struct sha1_ctxt));
     H(0) = 0x67452301;
@@ -170,7 +170,7 @@ void sha1_init(struct sha1_ctxt *ctxt)
     H(4) = 0xc3d2e1f0;
 }
 
-void sha1_pad(struct sha1_ctxt *ctxt)
+void tb_sha1_pad(struct sha1_ctxt *ctxt)
 {
     size_t padlen;    /*pad length in bytes*/
     size_t padstart;
@@ -203,7 +203,7 @@ void sha1_pad(struct sha1_ctxt *ctxt)
 #endif
 }
 
-void sha1_loop(struct sha1_ctxt *ctxt,const uint8_t *input,size_t len)
+void tb_sha1_loop(struct sha1_ctxt *ctxt,const uint8_t *input,size_t len)
 {
     size_t gaplen;
     size_t gapstart;
@@ -227,11 +227,11 @@ void sha1_loop(struct sha1_ctxt *ctxt,const uint8_t *input,size_t len)
     }
 }
 
-void sha1_result(struct sha1_ctxt *ctxt,unsigned char *digest0)
+void tb_sha1_result(struct sha1_ctxt *ctxt,unsigned char *digest0)
 {
     uint8_t *digest;
     digest = (uint8_t *)digest0;
-    sha1_pad(ctxt);
+    tb_sha1_pad(ctxt);
 #if BIG_ENDIAN
     tb_memcpy(digest, &ctxt->h.b8[0],20);
 #else
@@ -255,9 +255,9 @@ int sha1_buffer(const unsigned char *buffer, size_t len,
 
     if (md == NULL)
         return 1;
-    SHA1_Init(&c);
-    SHA1_Update(&c,buffer,len);
-    SHA1_Final(md,&c);
+    tb_sha1_init(&c);
+    tb_sha1_loop(&c,buffer,len);
+    tb_sha1_result(&c,md);
     return 0;
 }
 

@@ -120,7 +120,7 @@ static int sha256_compress(sha256_state * md, unsigned char *buf)
 
 #define SHA256_BLOCK_SIZE   64
 #define MIN(x, y) ( ((x)<(y))?(x):(y) )
-int sha256_process(sha256_state * md, const unsigned char *in, unsigned long inlen)
+static int sha256_process(sha256_state * md, const unsigned char *in, unsigned long inlen)
 {
     unsigned long n;
     int           err;
@@ -161,7 +161,7 @@ int sha256_process(sha256_state * md, const unsigned char *in, unsigned long inl
    @param md   The hash state you wish to initialize
    @return CRYPT_OK if successful
 */
-void sha256_init(sha256_state * md)
+static void sha256_init(sha256_state * md)
 {
     if (md == NULL)
         return;
@@ -184,7 +184,7 @@ void sha256_init(sha256_state * md)
    @param out [out] The destination of the hash (32 bytes)
    @return 0 if successful
 */
-int sha256_done(sha256_state * md, unsigned char *out)
+static int sha256_done(sha256_state * md, unsigned char *out)
 {
     int i;
 

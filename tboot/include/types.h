@@ -41,44 +41,63 @@
 
 #define NULL ((void*)0)
 
+typedef char                int8_t;
+typedef short               int16_t;
+typedef int                 int32_t;
+
 typedef unsigned char       uint8_t;
 typedef unsigned short      uint16_t;
 typedef unsigned int        uint32_t;
+typedef unsigned long long  uint64_t;
 
 typedef unsigned char       u8;
 typedef unsigned short      u16;
 typedef unsigned int        u32;
+typedef unsigned long long  u64;
 
 typedef signed short        s16;
 
 typedef unsigned char       u_char;
 
-typedef unsigned int		u_int;
+typedef unsigned int        u_int;
 
 typedef unsigned char       u_int8_t;
 typedef unsigned short      u_int16_t;
 typedef unsigned int        u_int32_t;
+typedef unsigned long long  u_int64_t;
+
+typedef __WCHAR_TYPE__      wchar_t;
 
 /* 
- * This should be unsigned int but gets an error in
+ * This should be __SIZE_TYPE__ but gets an error in
  *   policy.c that expects it to be an unsigned long.
  */
 typedef unsigned long       size_t;
 
-/*
- * This is specifically for IA32.
- */
+typedef __PTRDIFF_TYPE__    ptrdiff_t;
+
+#ifdef __LP64__
+/* This is specifically for x64 (64-bit x86_64). */
+#error "tboot should be compiled as a 32-bit x86 binary"
+typedef unsigned long       uintptr_t;
+#define BYTES_PER_LONG 8
+#else
+/* This is specifically for IA32 (32-bit x86). */
 typedef unsigned int        uintptr_t;
-typedef unsigned long long  u64;
-typedef unsigned long long  uint64_t;
-typedef unsigned long long  u_int64_t;
 #define BYTES_PER_LONG 4
+#endif /* __LP64__ */
 
 #if __GNUC__ > 3
 #define offsetof(type, field) __builtin_offsetof(type, field)
 #else
 #define offsetof(type, member) ((size_t) &((type *)0)->member)
 #endif
+
+#define container_of(ptr, type, member) \
+	({ \
+		const typeof(((type *)0)->member) *__mptr = (ptr); \
+		(type *)((char *)__mptr - offsetof(type, member)); \
+	})
 
 #endif    /* __TYPES_H__ */
 
