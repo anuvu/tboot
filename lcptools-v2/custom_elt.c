@@ -82,6 +82,14 @@ static bool string_to_uuid(const char *s, uuid_t *uuid)
         return true;
     }
 
+    /*
+     * users can input "certificates" to specify LCP_CUSTOM_ELEMENT_CERTS_UUID
+     */
+    if ( strcmp(s, "certificates") == 0 ) {
+        *uuid = (uuid_t)LCP_CUSTOM_ELEMENT_CERTS_UUID;
+        return true;
+    }
+
     /* Fetch data1 */
     if ( *s++ != '{' )
         return false;
@@ -247,7 +255,8 @@ static polelt_plugin_t plugin = {
     "      custom\n"
     "        --uuid <UUID>               UUID in format:\n"
     "                                    {0xaabbccdd, 0xeeff, 0xgghh, 0xiijj,\n"
-    "                                    {0xkk 0xll, 0xmm, 0xnn, 0xoo, 0xpp}}\n"
+    "                                    {0xkk 0xll, 0xmm, 0xnn, 0xoo, 0xpp}},\n"
+    "                                    or \"--uuid certificates\",\n"
     "                                    or \"--uuid tboot\" to use default\n"
     "        <FILE>                      file containing element data\n",
     LCP_POLELT_TYPE_CUSTOM2,

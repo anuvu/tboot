@@ -1,6 +1,8 @@
 /*
  * policy.c: support functions for tboot verification launch
  *
+ * Copyright (c) 2020 Cisco Systems, Inc. <pmoore2@cisco.com>
+ *
  * Copyright (c) 2006-2014, Intel Corporation
  * All rights reserved.
  *
@@ -61,6 +63,8 @@
 #include <txt/mtrrs.h>
 #include <txt/txt.h>
 #include <txt/heap.h>
+#include <asn1.h>
+#include <pkcs1.h>
 
 extern void shutdown(void);
 extern void s3_launch(void);
@@ -255,6 +259,20 @@ static bool read_policy_from_tpm(uint32_t index, void* policy_index, size_t *pol
 }
 
 /*
+ * helper function for pkcs1_foreachcert() to print certificates
+ */
+int print_cert(struct pkcs1_cert_def *cert)
+{
+    printk(TBOOT_INFO"  CN=\"");
+    asn1_blob_printstr(&cert->subject_cn);
+    printk("\", serial=0x");
+    asn1_blob_printhex(&cert->serial);
+    printk("\n");
+
+    return 0;
+}
+
+/*
  * unwrap_lcp_policy
  *
  * unwrap custom element in lcp policy into tb policy
@@ -264,6 +282,7 @@ static bool unwrap_lcp_policy(void)
 {
     void* lcp_base;
     uint32_t lcp_size;
+    bool found_tb = false;
 
     // scaffolding
     printk(TBOOT_INFO"in unwrap_lcp_policy\n");
@@ -298,13 +317,32 @@ static bool unwrap_lcp_policy(void)
                     lcp_custom_element_t *custom =
                         (lcp_custom_element_t *)&elt->data;
 
-                    /* check uuid in custom element */
+                    /* vlp / tboot policy */
                     if ( are_uuids_equal(&custom->uuid,
                              &((uuid_t)LCP_CUSTOM_ELEMENT_TBOOT_UUID)) ) {
                         tb_memcpy(_policy_index_buf, &custom->data,
                             elt->size - sizeof(*elt) - sizeof(uuid_t));
-                        return true; /* find tb policy */
+                        found_tb = true; /* find tb policy */
                     }
+
+                    /* certificates */
+                    /* NOTE: wait until after the GETSEC[ENTER] to import */
+                    if ( txt_is_launched() &&
+                         are_uuids_equal(&custom->uuid,
+                             &((uuid_t)LCP_CUSTOM_ELEMENT_CERTS_UUID)) ) {
+                        int cnt_before;
+                        cnt_before = pkcs1_count();
+                        if (pkcs1_import(custom->data,
+                                elt->size - sizeof(*elt) - sizeof(uuid_t),
+                                CERT_F_TRUSTED) == 0)
+                            printk(TBOOT_INFO"imported %d TXT/sig LCP certs\n",
+                                   pkcs1_count() - cnt_before);
+                        else
+                            printk(TBOOT_ERR"Error: failed to import TXT/sig LCP certificates\n");
+                        printk(TBOOT_INFO"TXT/sig trusted certificate list:\n");
+                        pkcs1_foreachcert(CERT_F_TRUSTED, &print_cert);
+                    }
+
                 }
 
                 elts_size += elt->size;
@@ -321,7 +359,7 @@ static bool unwrap_lcp_policy(void)
         }
     }
 
-    return false;
+    return found_tb;
 }
 
 /*

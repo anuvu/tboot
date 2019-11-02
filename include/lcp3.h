@@ -48,6 +48,9 @@
 #define LCP_CUSTOM_ELEMENT_TBOOT_UUID {0xc3930641, 0xe3cb, 0x4f40, 0x91d7, \
                                       {0x27, 0xf8, 0xb9, 0xe2, 0x5c, 0x86}}
 
+#define LCP_CUSTOM_ELEMENT_CERTS_UUID {0xc427f712, 0x1043, 0x46bf, 0xa351, \
+                                      {0xe3, 0x33, 0xf6, 0x7e, 0xde, 0x88}}
+
 /*--------- LCP FILE SIGNATURE ------------*/
 #define LCP_POLICY_DATA_FILE_SIGNATURE   "Intel(R) TXT LCP_POLICY_DATA\0\0\0\0"
 

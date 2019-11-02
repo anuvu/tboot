@@ -70,6 +70,7 @@
 #include <integrity.h>
 #include <cmdline.h>
 #include <tpm_20.h>
+#include <crypt.h>
 
 extern void _prot_to_real(uint32_t dist_addr);
 extern bool set_policy(void);
@@ -346,6 +347,12 @@ void begin_launch(void *addr, uint32_t magic)
 
     /* initialize all logging targets */
     printk_init();
+
+    /* initialize the crypto */
+    if (crypt_init()) {
+        printk(TBOOT_ERR"Error: crypto library init error\n");
+        apply_policy(TB_ERR_FATAL);
+    }
 
     printk(TBOOT_INFO"******************* TBOOT *******************\n");
     printk(TBOOT_INFO"   %s\n", TBOOT_CHANGESET);
