@@ -128,7 +128,7 @@
  * You can externally define this or it defaults to 4096-bits [allowing multiplications upto 2048x2048 bits ]
  */
 #ifndef FP_MAX_SIZE
-   #define FP_MAX_SIZE           (4096+(8*DIGIT_BIT))
+   #define FP_MAX_SIZE           (8192+(8*DIGIT_BIT))
 #endif
 
 /* will this lib work? */
