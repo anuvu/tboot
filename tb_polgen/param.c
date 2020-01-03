@@ -51,6 +51,7 @@
 
 static const char *help[] = {
     "tb_polgen --create --type        nonfatal|continue|halt\n",
+    "                   [--alg        sha1 (default)|sha256]\n",
     "                   [--ctrl       <policy control value>]\n",
     "                   [--verbose]\n",
     "                   <policy file name>\n",
@@ -92,6 +93,7 @@ static struct option long_options[] =
 
     {"type",           required_argument,    NULL,    't'},
     {"ctrl",           required_argument,    NULL,    'c'},
+    {"alg",            required_argument,    NULL,    'a'},
 
     {"num",            required_argument,    NULL,    'n'},
     {"pcr",            required_argument,    NULL,    'p'},
@@ -132,6 +134,12 @@ static option_table_t mod_num_opts[] = {
 static option_table_t pcr_opts[] = {
     {"none",         int_opt : TB_POL_PCR_NONE},
     {""},
+    {NULL}
+};
+
+static option_table_t alg_opts[] = {
+    {"sha1",         int_opt : TB_HALG_SHA1},
+    {"sha256",       int_opt : TB_HALG_SHA256},
     {NULL}
 };
 
@@ -180,6 +188,7 @@ void print_params(param_data_t *params)
     info_msg("params:\n");
     info_msg("\t cmd = %d\n", params->cmd);
     info_msg("\t policy_type = %d\n", params->policy_type);
+    info_msg("\t hash_alg = %d\n", params->hash_alg);
     info_msg("\t policy_control = %d\n", params->policy_control);
     info_msg("\t mod_num = %d\n", params->mod_num);
     info_msg("\t pcr = %d\n", params->pcr);
@@ -210,6 +219,10 @@ static bool validate_params(param_data_t *params)
             }
             if ( params->policy_type == -1 ) {
                 msg = "Missing policy type\n";
+                goto error;
+            }
+            if ( params->hash_alg == -1 ) {
+                msg = "Invalid --alg option\n";
                 goto error;
             }
             if ( (params->policy_control & ~TB_POLCTL_EXTEND_PCR17) != 0 ) {
@@ -315,6 +328,7 @@ bool parse_input_params(int argc, char **argv, param_data_t *params)
     params->cmd = POLGEN_CMD_NONE;
     params->mod_num = -1;
     params->pcr = -1;
+    params->hash_alg = TB_HALG_SHA1;
     params->policy_type = -1;
     params->policy_control = TB_POLCTL_EXTEND_PCR17;
     params->hash_type = -1;
@@ -324,7 +338,7 @@ bool parse_input_params(int argc, char **argv, param_data_t *params)
     params->elt_file[0] = '\0';
 
     while ( true ) {
-        c = getopt_long_only(argc, argv, "HCADUSt:c:n:p:h:l:i:o:e:",
+        c = getopt_long_only(argc, argv, "HCADUSt:a:c:n:p:h:l:i:o:e:",
                              long_options, &option_index);
         if ( c == -1 )     /* no more args */
             break;
@@ -374,6 +388,13 @@ bool parse_input_params(int argc, char **argv, param_data_t *params)
                 if ( !parse_int_option(policy_type_opts, optarg,
                                        (int *)&params->policy_type) ) {
                     error_msg("Unknown --type option\n");
+                    return false;
+                }
+                break;
+            case 'a':                       /* --alg */
+                if ( !parse_int_option(alg_opts, optarg,
+                                       (int *)&params->hash_alg) ) {
+                    error_msg("Unknown --alg option\n");
                     return false;
                 }
                 break;

@@ -52,11 +52,10 @@
 
 extern tb_policy_t *g_policy;
 
-static bool hash_file(const char *filename, bool unzip, tb_hash_t *hash)
+static bool hash_file(const char *filename, bool unzip, tb_hash_t *hash, uint16_t hash_alg)
 {
     FILE *f;
     static char buf[1024];
-    const EVP_MD *md;
     int read_cnt;
 
     if ( unzip )
@@ -69,8 +68,24 @@ static bool hash_file(const char *filename, bool unzip, tb_hash_t *hash)
         return false;
     }
 
+    const EVP_MD *md;
+    uint8_t* hash_out;
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-    md = EVP_sha1();
+
+     switch (hash_alg) {
+        case TB_HALG_SHA1:
+            md = EVP_sha1();
+            hash_out = hash->sha1;
+            break;
+        case TB_HALG_SHA256:
+            md = EVP_sha256();
+            hash_out = hash->sha256;
+            break;
+        default:
+            error_msg("unsupported hash alg (%d)\n", hash_alg);
+            return false;
+    }
+
     EVP_DigestInit(ctx, md);
     do {
         if ( unzip )
@@ -82,7 +97,7 @@ static bool hash_file(const char *filename, bool unzip, tb_hash_t *hash)
 
         EVP_DigestUpdate(ctx, buf, read_cnt);
     } while ( true );
-    EVP_DigestFinal(ctx, hash->sha1, NULL);
+    EVP_DigestFinal(ctx, hash_out, NULL);
 
     if ( unzip )
         gzclose((gzFile)f);
@@ -129,9 +144,12 @@ bool do_create(const param_data_t *params)
 
     /* if file does not exist then create empty policy */
     if ( !existing_policy )
-        new_policy(params->policy_type, params->policy_control);
-    else
+        new_policy(params->policy_type, params->policy_control, params->hash_alg);
+    else {
+        error_msg("warning: modifing existing policy file, hash algorithm "
+                  "will not be changed\n");
         modify_policy(params->policy_type, params->policy_control);
+    }
 
     info_msg("writing new policy file...\n");
     if ( !write_policy_file(params->policy_file) )
@@ -167,46 +185,39 @@ bool do_add(const param_data_t *params)
 
     /* hash command line and files */
     if ( params->hash_type == TB_HTYPE_IMAGE ) {
-        EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-        const EVP_MD *md;
         tb_hash_t final_hash, hash;
 
         /* hash command line */
         info_msg("hashing command line \"%s\"...\n", params->cmdline);
-        md = EVP_sha1();
-        EVP_DigestInit(ctx, md);
-        EVP_DigestUpdate(ctx, (unsigned char *)params->cmdline,
-                         strnlen_s(params->cmdline, sizeof(params->cmdline)));
-        EVP_DigestFinal(ctx, (unsigned char *)&final_hash, NULL);
+        hash_buffer((unsigned char *)params->cmdline,
+                    strnlen_s(params->cmdline, sizeof(params->cmdline)),
+                    &final_hash, g_policy->hash_alg);
         if ( verbose ) {
             info_msg("hash is...");
-            print_hash(&final_hash, TB_HALG_SHA1);
+            print_hash(&final_hash, g_policy->hash_alg);
         }
 
         /* hash file */
         info_msg("hashing image file %s...\n", params->image_file);
-	if ( !hash_file(params->image_file, true, &hash) ) {
-            EVP_MD_CTX_destroy(ctx);
+	if ( !hash_file(params->image_file, true, &hash, g_policy->hash_alg) ) {
             return false;
 	}
         if ( verbose ) {
             info_msg("hash is...");
-            print_hash(&hash, TB_HALG_SHA1);
+            print_hash(&hash, g_policy->hash_alg);
         }
 
-        if ( !extend_hash(&final_hash, &hash, TB_HALG_SHA1) ){
-            EVP_MD_CTX_destroy(ctx);
+        if ( !extend_hash(&final_hash, &hash, g_policy->hash_alg) ){
             return false;
 	}
 
         if ( verbose ) {
             info_msg("cummulative hash is...");
-            print_hash(&final_hash, TB_HALG_SHA1);
+            print_hash(&final_hash, g_policy->hash_alg);
         }
 
         if ( !add_hash(pol_entry, &final_hash) ) {
             error_msg("cannot add another hash\n");
-            EVP_MD_CTX_destroy(ctx);
             return false;
         }
     }

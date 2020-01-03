@@ -147,12 +147,12 @@ bool write_policy_file(const char *policy_filename)
     return true;
 }
 
-void new_policy(int policy_type, int policy_control)
+void new_policy(int policy_type, int policy_control, int hash_alg)
 {
     /* current version is 2 */
     g_policy->version = 2;
 
-    g_policy->hash_alg = TB_HALG_SHA1;
+    g_policy->hash_alg = hash_alg;
 
     g_policy->num_entries = 0;
 

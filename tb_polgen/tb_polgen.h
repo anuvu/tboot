@@ -56,6 +56,7 @@ typedef struct {
     int            pcr;
     int            hash_type;
     int            pos;
+    int            hash_alg;
     char           cmdline[TBOOT_KERNEL_CMDLINE_SIZE];
     char           image_file[FILENAME_MAX];
     char           elt_file[FILENAME_MAX];
@@ -78,7 +79,7 @@ extern bool do_show(const param_data_t *params);
 extern void *read_elt_file(const char *elt_filename, size_t *length);
 extern bool read_policy_file(const char *policy_filename, bool *file_exists);
 extern bool write_policy_file(const char *policy_filename);
-extern void new_policy(int policy_type, int policy_control);
+extern void new_policy(int policy_type, int policy_control, int hash_alg);
 extern void modify_policy(int policy_type, int policy_control);
 extern tb_policy_entry_t *add_pol_entry(uint8_t mod_num, uint8_t pcr,
                                         uint8_t hash_type);

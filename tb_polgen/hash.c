@@ -62,11 +62,14 @@ bool are_hashes_equal(const tb_hash_t *hash1, const tb_hash_t *hash2,
         return false;
     }
 
-    if ( hash_alg == TB_HALG_SHA1 )
-        return (memcmp_s(hash1, SHA1_LENGTH, hash2, SHA1_LENGTH, &diff) == 0 && diff == 0);
-    else {
-        error_msg("unsupported hash alg (%d)\n", hash_alg);
-        return false;
+    switch (hash_alg) {
+        case TB_HALG_SHA1:
+            return (memcmp_s(hash1, SHA1_LENGTH, hash2, SHA1_LENGTH, &diff) == EOK && diff == 0);
+        case TB_HALG_SHA256:
+            return (memcmp_s(hash1, SHA256_LENGTH, hash2, SHA256_LENGTH, &diff) == EOK && diff == 0);
+        default:
+            error_msg("unsupported hash alg (%d)\n", hash_alg);
+            return false;
     }
 }
 
@@ -84,21 +87,29 @@ bool hash_buffer(const unsigned char* buf, size_t size, tb_hash_t *hash,
         return false;
     }
 
-    if ( hash_alg == TB_HALG_SHA1 ) {
-        EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-        const EVP_MD *md;
+    const EVP_MD *md;
+    uint8_t* hash_out;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
-        md = EVP_sha1();
-        EVP_DigestInit(ctx, md);
-        EVP_DigestUpdate(ctx, buf, size);
-        EVP_DigestFinal(ctx, hash->sha1, NULL);
-        EVP_MD_CTX_destroy(ctx);
-        return true;
+    switch (hash_alg) {
+        case TB_HALG_SHA1:
+            md = EVP_sha1();
+            hash_out = hash->sha1;
+            break;
+        case TB_HALG_SHA256:
+            md = EVP_sha256();
+            hash_out = hash->sha256;
+            break;
+        default:
+            error_msg("unsupported hash alg (%d)\n", hash_alg);
+            return false;
     }
-    else {
-        error_msg("unsupported hash alg (%d)\n", hash_alg);
-        return false;
-    }
+
+    EVP_DigestInit(ctx, md);
+    EVP_DigestUpdate(ctx, buf, size);
+    EVP_DigestFinal(ctx, hash_out, NULL);
+    EVP_MD_CTX_destroy(ctx);
+    return true;
 }
 
 /*
@@ -116,10 +127,10 @@ bool extend_hash(tb_hash_t *hash1, const tb_hash_t *hash2, uint16_t hash_alg)
         return false;
     }
 
-    if ( hash_alg == TB_HALG_SHA1 ) {
-        EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-        const EVP_MD *md;
+    const EVP_MD *md;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
+    if ( hash_alg == TB_HALG_SHA1 ) {
         memcpy_s(buf, sizeof(buf), &(hash1->sha1), sizeof(hash1->sha1));
         memcpy_s(buf + sizeof(hash1->sha1), sizeof(buf) - sizeof(hash1->sha1),
                  &(hash2->sha1), sizeof(hash1->sha1));
@@ -128,12 +139,21 @@ bool extend_hash(tb_hash_t *hash1, const tb_hash_t *hash2, uint16_t hash_alg)
         EVP_DigestUpdate(ctx, buf, 2*sizeof(hash1->sha1));
         EVP_DigestFinal(ctx, hash1->sha1, NULL);
         EVP_MD_CTX_destroy(ctx);
-        return true;
-    }
-    else {
+    } else if ( hash_alg == TB_HALG_SHA256 ) {
+        memcpy_s(buf, sizeof(buf), &(hash1->sha256), sizeof(hash1->sha256));
+        memcpy_s(buf + sizeof(hash1->sha256), sizeof(buf) - sizeof(hash1->sha256),
+                 &(hash2->sha256), sizeof(hash1->sha256));
+        md = EVP_sha256();
+        EVP_DigestInit(ctx, md);
+        EVP_DigestUpdate(ctx, buf, 2*sizeof(hash1->sha256));
+        EVP_DigestFinal(ctx, hash1->sha256, NULL);
+        EVP_MD_CTX_destroy(ctx);
+    } else {
         error_msg("unsupported hash alg (%d)\n", hash_alg);
         return false;
     }
+
+    return true;
 }
 
 void print_hash(const tb_hash_t *hash, uint16_t hash_alg)
@@ -143,14 +163,21 @@ void print_hash(const tb_hash_t *hash, uint16_t hash_alg)
         return;
     }
 
-    if ( hash_alg == TB_HALG_SHA1 ) {
-        for ( unsigned int i = 0; i < sizeof(hash->sha1); i++ )
-            printf("%02x ", hash->sha1[i]);
-        printf("\n");
-    }
-    else {
-        error_msg("unsupported hash alg (%d)\n", hash_alg);
-        return;
+    switch (hash_alg) {
+        case TB_HALG_SHA1:
+            for ( unsigned int i = 0; i < sizeof(hash->sha1); i++ ) {
+                printf("%02x ", hash->sha1[i]);
+            }
+            printf("\n");
+            break;
+        case TB_HALG_SHA256:
+            for ( unsigned int i = 0; i < sizeof(hash->sha256); i++ ) {
+                printf("%02x ", hash->sha256[i]);
+            }
+            printf("\n");
+            break;
+        default:
+            error_msg("unsupported hash alg (%d)\n", hash_alg);
     }
 }
 
@@ -162,10 +189,16 @@ void copy_hash(tb_hash_t *dest_hash, const tb_hash_t *src_hash,
         return;
     }
 
-    if ( hash_alg == TB_HALG_SHA1 )
-        memcpy_s(dest_hash, SHA1_LENGTH, src_hash, SHA1_LENGTH);
-    else
-        error_msg("unsupported hash alg (%d)\n", hash_alg);
+    switch (hash_alg) {
+        case TB_HALG_SHA1:
+            memcpy_s(dest_hash, SHA1_LENGTH, src_hash, SHA1_LENGTH);
+            break;
+        case TB_HALG_SHA256:
+            memcpy_s(dest_hash, SHA256_LENGTH, src_hash, SHA256_LENGTH);
+            break;
+        default:
+            error_msg("unsupported hash alg (%d)\n", hash_alg);
+    }
 }
 
 
