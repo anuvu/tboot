@@ -57,7 +57,7 @@ static const char *help[] = {
     "                   <policy file name>\n",
     "tb_polgen --add    --num         <module number>|any\n",
     "                   --pcr         <TPM PCR number>|none\n",
-    "                   --hash        any|image\n",
+    "                   --hash        any|image|pecoff\n",
     "                   [--cmdline    \"command line\"]\n",
     "                   [--image      <image file name>]\n",
     "                   [--verbose]\n",
@@ -120,6 +120,7 @@ static option_table_t policy_type_opts[] = {
 };
 
 static option_table_t hash_type_opts[] = {
+    {"pecoff",       int_opt : TB_HTYPE_PECOFF},
     {"image",        int_opt : TB_HTYPE_IMAGE},
     {"any",          int_opt : TB_HTYPE_ANY},
     {NULL}
@@ -237,14 +238,15 @@ static bool validate_params(param_data_t *params)
                 msg = "Missing policy file\n";
                 goto error;
             }
-            /* if hash_type is not ANY then need an image file */
-            if ( params->hash_type != TB_HTYPE_ANY &&
+            /* if hash_type is IMAGE then need an image file */
+            if ( params->hash_type == TB_HTYPE_IMAGE &&
                  strnlen_s(params->image_file, sizeof(params->image_file)) == 0 ) {
                 msg = "Missing --image option\n";
                 goto error;
             }
-            /* if hash_type is ANY then no need for an image file */
-            if ( params->hash_type == TB_HTYPE_ANY &&
+            /* if hash_type is ANY or PECOFF then no need for an image file */
+            if ( ( params->hash_type == TB_HTYPE_ANY ||
+                   params->hash_type == TB_HTYPE_PECOFF ) &&
                  strnlen_s(params->image_file, sizeof(params->image_file)) != 0 ) {
                 msg = "Extra --image option\n";
                 goto error;

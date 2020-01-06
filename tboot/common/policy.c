@@ -65,6 +65,8 @@
 #include <txt/heap.h>
 #include <asn1.h>
 #include <pkcs1.h>
+#include <pkcs7.h>
+#include <pecoff.h>
 
 extern void shutdown(void);
 extern void s3_launch(void);
@@ -448,6 +450,60 @@ bool hash_policy(tb_hash_t *hash, uint16_t hash_alg)
                        hash, hash_alg);
 }
 
+/* generate hash of a signing certificate */
+static bool hash_signer(hash_list_t *hl, void *base, size_t size)
+{
+    struct tpm_if *tpm = get_tpm();
+    const struct tpm_if_fp *tpm_fp = get_tpm_fp();
+
+    /* NOTE: this is a greatly simplified version of hash_module(), the same
+     *       basic approach is used, but we don't worry about the cmdline,
+     *       just the base/size; this should make it easier for userspace to
+     *       look at the pcr containing the singer hash and decide if it is
+     *       "good" or "bad" */
+
+    if (hl == NULL || base == NULL || size == 0) {
+        printk(TBOOT_ERR"Error: input parameter to hash_signer() is wrong\n");
+        return false;
+    }
+
+    switch (tpm->extpol) {
+    case TB_EXTPOL_FIXED:
+        hl->count = 1;
+        hl->entries[0].alg = tpm->cur_alg;
+        if (!hash_buffer(base, size, &hl->entries[0].hash, tpm->cur_alg)) {
+            printk(TBOOT_ERR"Error: TB_EXTPOL_FIXED failed in hash_signer()\n");
+            return false;
+        }
+        break;
+
+    case TB_EXTPOL_AGILE:
+        if (!tpm_fp->hash(tpm, 2, base, size, hl)) {
+            printk(TBOOT_ERR"Error: TB_EXTPOL_AGILE failed in hash_signer()\n");
+            return false;
+        }
+        break;
+
+    case TB_EXTPOL_EMBEDDED:
+        hl->count = tpm->alg_count;
+        for (unsigned int i = 0; i < hl->count; i++) {
+            hl->entries[i].alg = tpm->algs[i];
+            if (!hash_buffer(base, size, &hl->entries[i].hash, tpm->algs[i])) {
+                printk(TBOOT_ERR"Error: TB_EXTPOL_EMBEDDED(%d) failed in hash_signer()\n", i);
+                return false;
+            }
+        }
+        break;
+
+    default:
+        printk(TBOOT_ERR"Error: invalid TPM extpol (%d) in hash_signer()\n",
+               tpm->extpol);
+        return false;
+    }
+
+    return true;
+}
+
 /* generate hash by hashing cmdline and module image */
 static bool hash_module(hash_list_t *hl,
                         const char* cmdline, void *base,
@@ -646,12 +702,107 @@ void apply_policy(tb_error_t error)
 #define NUM_VL_ENTRIES   g_pre_k_s3_state.num_vl_entries
 
 /*
+ * verify a signed pecoff executable (e.g. a UEFI Secure Boot signed kernel)
+ */
+static tb_error_t verify_module_pecoff(module_t *module,
+                                       tb_policy_entry_t *pol_entry)
+{
+    /* assumes module and pol_entry are valid */
+
+    int rc;
+    void *base = (void *)module->mod_start;
+    size_t size = module->mod_end - module->mod_start;
+    struct pe_file pecoff;
+    struct pkcs1_cert_def *signer;
+    struct pkcs1_cert_def *root;
+
+    /* require a policy entry */
+    if (!pol_entry) {
+        printk(TBOOT_ERR"Error: no VLP policy for TXT/sig verification\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+
+    rc = pe_parse(&pecoff, base, size);
+    if (rc != 0) {
+        printk(TBOOT_ERR"Error: module not in PECOFF format\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+
+    rc = pkcs7_signeddata_parse(&pecoff.pkcs7,
+                                pecoff.act->cert, pecoff.act->len);
+    if (rc != 0) {
+        printk(TBOOT_ERR"Error: failed parsing the PECOFF PKCS #7 signature\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+
+    rc = pe_ac_digest_verify(&pecoff);
+    if (rc == PE_CRYPTFAIL) {
+        printk(TBOOT_ERR"Error: PECOFF digest verification failed\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    } else if (rc != 0) {
+        printk(TBOOT_ERR"Error: PECOFF digest verification error\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+
+    /* TODO: move the various verification steps into pkcs7.c? */
+
+    rc = pkcs7_signeddata_content_verify(&pecoff.pkcs7);
+    if (rc == PE_CRYPTFAIL) {
+        printk(TBOOT_ERR"Error: PECOFF signed context verification failed\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    } else if (rc != 0) {
+        printk(TBOOT_ERR"Error: PECOFF signed content verification error\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+    signer = pkcs1_search_pkcs7signer(&pecoff.pkcs7.signature.signer,
+                                      &pecoff.pkcs7.signature.signer_serial);
+    if (signer == NULL) {
+        printk(TBOOT_ERR"Error: TXT/sig trusted signing authority not found\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+    rc = pkcs7_signeddata_sig_verify(&pecoff.pkcs7,
+                                     signer->raw.data, signer->raw.len);
+    if (rc == PE_CRYPTFAIL) {
+        printk(TBOOT_ERR"Error: PECOFF signature verification failed\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    } else if (rc != 0) {
+        printk(TBOOT_ERR"Error: PECOFF signature verification error\n");
+        return TB_ERR_MODULE_VERIFICATION_FAILED;
+    }
+
+    /* update the user via printk() regardless of the policy */
+    printk(TBOOT_INFO"PECOFF TXT/sig verification succeeded\n");
+
+    root = pkcs1_search_trustroot(signer);
+    /* return if we don't have a trust root or we aren't hashing it to a pcr */
+    if (!root || pol_entry->pcr == TB_POL_PCR_NONE)
+        return TB_ERR_NONE;
+
+    /* display the trust root we are using and the associated pcr */
+    printk(TBOOT_INFO"extending TXT/sig trust root into PCR[%d]\n",
+           pol_entry->pcr);
+    printk(TBOOT_INFO"TXT/sig trust root:\n");
+    print_cert(root);
+
+    /* try to hash the trust root into a pcr if it isn't maxed out */
+    if (NUM_VL_ENTRIES < MAX_VL_HASHES) {
+        if (hash_signer(&VL_ENTRIES(NUM_VL_ENTRIES).hl,
+            root->raw.data, root->raw.len))
+            VL_ENTRIES(NUM_VL_ENTRIES++).pcr = pol_entry->pcr;
+    } else
+        printk(TBOOT_WARN"\t too many hashes to save\n");
+
+    return TB_ERR_NONE;
+}
+
+/*
  * verify modules against Verified Launch policy and save hash
  * if pol_entry is NULL, assume it is for module 0, which gets extended
  * to PCR 18
  */
-static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
-                                uint16_t hash_alg)
+static tb_error_t verify_module_hash(module_t *module,
+                                     tb_policy_entry_t *pol_entry,
+                                     uint16_t hash_alg)
 {
     /* assumes module is valid */
 
@@ -714,6 +865,17 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
     }
 
     return TB_ERR_NONE;
+}
+
+/*
+ * verify modules against the Verified Launch policy
+ */
+static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+                                uint16_t hash_alg)
+{
+    if (pol_entry != NULL && pol_entry->hash_type == TB_HTYPE_PECOFF)
+        return verify_module_pecoff(module, pol_entry);
+    return verify_module_hash(module, pol_entry, hash_alg);
 }
 
 static void verify_g_policy(void)

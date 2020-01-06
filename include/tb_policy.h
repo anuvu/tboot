@@ -55,6 +55,8 @@ enum {
 enum {
     TB_HTYPE_ANY,
     TB_HTYPE_IMAGE,
+    TB_HTYPE_PECOFF,                  /* pecoff signature verification */
+    TB_HTYPE_MAX
 };
 
 
@@ -125,6 +127,8 @@ static inline const char *hash_type_to_string(uint8_t hash_type)
         return "TB_HTYPE_ANY";
     else if ( hash_type == TB_HTYPE_IMAGE )
         return "TB_HTYPE_IMAGE";
+    else if ( hash_type == TB_HTYPE_PECOFF )
+        return "TB_HTYPE_PECOFF";
     else 
         return "unsupported";
 }
@@ -336,7 +340,7 @@ static inline bool verify_policy(const tb_policy_t *policy, size_t size, bool pr
 
         if ( print ) PRINT(TBOOT_DETA"\t\t hash_type: %s\n",
                            hash_type_to_string(pol_entry->hash_type));
-        if ( pol_entry->hash_type > TB_HTYPE_IMAGE )
+        if ( pol_entry->hash_type >= TB_HTYPE_MAX )
             return false;
 
         if ( print ) PRINT(TBOOT_DETA"\t\t num_hashes: %u\n", pol_entry->num_hashes);
