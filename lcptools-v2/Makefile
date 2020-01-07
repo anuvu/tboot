@@ -62,7 +62,7 @@ LDFLAGS += -L.
 
 # LCP v2
 
-POLELT_PLUGINS := mle_elt.o custom_elt.o sbios_elt.o stm_elt.o
+POLELT_PLUGINS := mle_elt.o custom_elt.o sbios_elt.o stm_elt.o pconf2_elt.o
 
 LCP2_LIB := liblcp.a
 

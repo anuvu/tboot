@@ -215,7 +215,7 @@ typedef struct __packed {
 typedef struct __packed {
     uint16_t             hash_alg;
     uint16_t             num_pcr_infos;
-    tpms_quote_info_t    prc_infos[];
+    tpms_quote_info_t    pcr_infos[];
 } lcp_pconf_element_t2;
 
 #define LCP_POLELT_TYPE_SBIOS2     0x12

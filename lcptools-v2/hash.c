@@ -1,6 +1,8 @@
 /*
  * hash.c: support functions for tb_hash_t type
  *
+ * Copyright (c) 2020 Cisco Systems, Inc. <pmoore2@cisco.com>
+ *
  * Copyright (c) 2014, Intel Corporation
  * All rights reserved.
  *
@@ -174,6 +176,28 @@ void print_hash(const tb_hash_t *hash, uint16_t hash_alg)
     }
     else
         return;
+}
+
+/*
+ * import a hash in the format "755567de6e0a3ee1b71a895b76..."
+ */
+bool import_hash(const char *string, tb_hash_t *hash, uint16_t alg)
+{
+    size_t string_len = strlen(string);
+    size_t hash_len = get_hash_size(alg);
+    unsigned int iter_a, iter_b;
+    char byte[3] = {0, 0, 0};
+
+    for (iter_a = 0, iter_b = 0;
+         iter_a < string_len && iter_b <= hash_len;
+         iter_a += 2, iter_b++) {
+        memcpy(byte, &string[iter_a], 2);
+        hash->sha1[iter_b] = strtol(byte, NULL, 16);
+    }
+    if (iter_a != string_len || iter_b != hash_len)
+        return false;
+
+    return true;
 }
 
 void copy_hash(tb_hash_t *dest_hash, const tb_hash_t *src_hash,

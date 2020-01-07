@@ -103,6 +103,7 @@ extern bool hash_buffer(const unsigned char* buf, size_t size, tb_hash_t *hash,
 extern bool extend_hash(tb_hash_t *hash1, const tb_hash_t *hash2,
                         uint16_t hash_alg);
 extern void print_hash(const tb_hash_t *hash, uint16_t hash_alg);
+extern bool import_hash(const char *string, tb_hash_t *hash, uint16_t alg);
 extern void copy_hash(tb_hash_t *dest_hash, const tb_hash_t *src_hash,
                       uint16_t hash_alg);
 
