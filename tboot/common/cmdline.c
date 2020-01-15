@@ -1,6 +1,8 @@
 /*
  * cmdline.c: command line parsing fns
  *
+ * Copyright (c) 2020 Cisco Systems, Inc. <pmoore2@cisco.com>
+ *
  * Copyright (c) 2006-2012, Intel Corporation
  * All rights reserved.
  *
@@ -86,7 +88,7 @@ static const cmdline_option_t g_tboot_cmdline_options[] = {
     { "min_ram", "0" },              /* size in bytes | 0 for no min */
     { "call_racm", "false" },        /* true|false|check */
     { "measure_nv", "false" },       /* true|false */
-    { "extpol",    "sha1" },         /*agile|embedded|sha1|sha256|sm3|... */
+    { "extpol",    "sha1" },         /* acm|agile|embedded|sha1|sha256|sm3|... */
     { "ignore_prev_err", "true"},    /* true|false */
     { "force_tpm2_legacy_log", "false"}, /* true|false */
     { "save_vtd", "false"},          /* true|false */
@@ -505,7 +507,7 @@ bool get_tboot_measure_nv(void)
     return true;
 }
 
-void get_tboot_extpol(void)
+void get_tboot_extpol(uint32_t acm_ext_policy)
 {
     const char *extpol = get_option_val(g_tboot_cmdline_options, g_tboot_param_values, "extpol");
     struct tpm_if *tpm = get_tpm();
@@ -531,6 +533,18 @@ void get_tboot_extpol(void)
     } else if ( tb_strcmp(extpol, "sm3") == 0 ) {
         tpm->extpol = TB_EXTPOL_FIXED;
         tpm->cur_alg = TB_HALG_SM3;
+    } else if ( tb_strcmp(extpol, "acm") == 0 ) {
+        if (acm_ext_policy & TPM_EXT_POLICY_EMBEDED_ALGS) {
+            tpm->extpol = TB_EXTPOL_AGILE;
+            tpm->cur_alg = TB_HALG_SHA256;
+        } else if (acm_ext_policy & TPM_EXT_POLICY_ALG_AGILE_CMD) {
+            tpm->extpol = TB_EXTPOL_EMBEDDED;
+            tpm->cur_alg = TB_HALG_SHA256;
+        } else {
+            /* default to sha1 if the acm doesn't support anything better */
+            tpm->extpol = TB_EXTPOL_FIXED;
+            tpm->cur_alg = TB_HALG_SHA1;
+        }
     }
 }
 

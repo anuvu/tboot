@@ -2719,7 +2719,7 @@ static bool tpm20_init(struct tpm_if *ti)
     ti->timeout.timeout_d = TIMEOUT_D;
 
     /* get pcr extend policy from cmdline */
-    get_tboot_extpol();
+    get_tboot_extpol(info_list->capabilities.ext_policy);
     if (info_list->capabilities.tpm_nv_index_set == 0){
         /* init NV index */
         ti->tb_policy_index = 0x1200001;
